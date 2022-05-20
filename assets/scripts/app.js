@@ -7,8 +7,42 @@ class Product {
   }
 }
 
-class ShoppingCart {
+class AttributeElement {
+  constructor(attrName, attrValue) {
+    this.name = attrName;
+    this.value = attrValue;
+  }
+}
+
+class Component {
+  constructor(renderHookId) {
+    this.hookId = renderHookId;
+  }
+
+  createRootElement(tag, cssClasses, attributes) {
+    const rootEl = document.createElement(tag);
+
+    if (cssClasses) {
+      rootEl.classList.add(...cssClasses);
+    }
+    if (attributes && attributes.length > 0) {
+      for (const attr of attributes) {
+        rootEl.setAttribute(attr.name, attr.value);
+      }
+    }
+
+    document.getElementById(this.hookId).append(rootEl);
+
+    return rootEl;
+  }
+}
+
+class ShoppingCart extends Component {
     items = [];
+
+    constructor(renderHookId) {
+      super(renderHookId);
+    }
 
     set cartItems(value) {
       this.items = value;
@@ -31,19 +65,16 @@ class ShoppingCart {
     }
 
     render() {
-        const cartEl = document.createElement('section');
+        const cartEl = this.createRootElement('section', ['cart']);
         cartEl.innerHTML = `
             <h2>Total: \$${0}</h2>
             <button>Order Now!</button>
         `;
-        cartEl.className = 'cart';
         this.totalOutput = cartEl.querySelector('h2');
-
-        return cartEl;
     }
 }
 
-class ProductItem {
+class ProductItem extends Component {
   constructor(product) {
     this.product = product;
   }
@@ -74,7 +105,7 @@ class ProductItem {
   }
 }
 
-class ProductList {
+class ProductList extends Component {
   products = [
     new Product(
       "A Pillow",
@@ -105,17 +136,15 @@ class ProductList {
   }
 }
 
-class Shop {
+class Shop extends Component {
     render() {
         const renderHook = document.getElementById("app");
 
-        this.cart = new ShoppingCart();
-        const cartEl = this.cart.render();
+        this.cart = new ShoppingCart('app');
 
         const productList = new ProductList();
         const prodListEl = productList.render();
 
-        renderHook.append(cartEl);
         renderHook.append(prodListEl);
     }
 }
