@@ -7,7 +7,7 @@ class Product {
   }
 }
 
-class AttributeElement {
+class ElementAttribute {
   constructor(attrName, attrValue) {
     this.name = attrName;
     this.value = attrValue;
@@ -15,9 +15,14 @@ class AttributeElement {
 }
 
 class Component {
-  constructor(renderHookId) {
+  constructor(renderHookId, shouldRender = true) {
     this.hookId = renderHookId;
+    if (shouldRender) {
+      this.render();
+    }
   }
+
+  render() {}
 
   createRootElement(tag, cssClasses, attributes) {
     const rootEl = document.createElement(tag);
@@ -59,7 +64,7 @@ class ShoppingCart extends Component {
     }
 
     addProduct(product) {
-        const updatedItems =[...this.items];
+        const updatedItems = [...this.items];
         updatedItems.push(product);
         this.cartItems = updatedItems;
     }
@@ -75,8 +80,10 @@ class ShoppingCart extends Component {
 }
 
 class ProductItem extends Component {
-  constructor(product) {
+  constructor(product, renderHookId) {
+    super(renderHookId, false);
     this.product = product;
+    this.render();
   }
 
   addToCart() {
@@ -84,8 +91,7 @@ class ProductItem extends Component {
   }
 
   render() {
-    const prodEl = document.createElement("li");
-    prodEl.className = "product-item";
+    const prodEl = this.createRootElement('li', ['product-item']);
     prodEl.innerHTML = `
                 <div>
                     <img src="${this.product.imageUrl}" alt="${this.product.title}">
@@ -100,52 +106,61 @@ class ProductItem extends Component {
     
     const addCartButton = prodEl.querySelector('button');
     addCartButton.addEventListener('click', this.addToCart.bind(this));
-
-    return prodEl;
   }
 }
 
 class ProductList extends Component {
-  products = [
-    new Product(
-      "A Pillow",
-      "https://skinnylaminx.com/wp-content/uploads/2019/09/Pillows-Covers-cat..jpg",
-      19.99,
-      "A soft pillow!"
-    ),
-    new Product(
-      "A Carpet",
-      "https://cache.hedgeapple.com/thumb/2021/06/ch/dqufiqsnxtxog6ukumoptbfocrid24/SGML938F-from-Melrose-Shag-900-by-Safavieh.jpg",
-      89.99,
-      "A carpet which you might like or not."
-    ),
-  ];
+  products = [];
 
-  constructor() {}
+  constructor(renderHookId) {
+    super(renderHookId);
+    this.fetchProducts();
+  }
+
+  fetchProducts() {
+    this.products = [
+      new Product(
+        "A Pillow",
+        "https://skinnylaminx.com/wp-content/uploads/2019/09/Pillows-Covers-cat..jpg",
+        19.99,
+        "A soft pillow!"
+      ),
+      new Product(
+        "A Carpet",
+        "https://cache.hedgeapple.com/thumb/2021/06/ch/dqufiqsnxtxog6ukumoptbfocrid24/SGML938F-from-Melrose-Shag-900-by-Safavieh.jpg",
+        89.99,
+        "A carpet which you might like or not."
+      ),
+    ];
+    this.renderProducts();
+  }
+
+  renderProducts() {
+    for (const prod of this.products) {
+      new ProductItem(prod, 'product-list');
+    }
+  }
 
   render() {
-    const prodList = document.createElement("ul");
-    prodList.className = "product-list";
-    for (const prod of this.products) {
-      const productItem = new ProductItem(prod);
-      const prodEl = productItem.render();
-      prodList.append(prodEl);
+    this.createRootElement(
+      'ul',
+      ['product-list'],
+      [new ElementAttribute('id', 'product-list')]);
+    
+    if(this.products && this.products.length > 0) {
+      this.renderProducts();
     }
-
-    return prodList;
   }
 }
 
 class Shop extends Component {
+    constructor() {
+      super();
+    }
+
     render() {
-        const renderHook = document.getElementById("app");
-
-        this.cart = new ShoppingCart('app');
-
-        const productList = new ProductList();
-        const prodListEl = productList.render();
-
-        renderHook.append(prodListEl);
+        new ShoppingCart('app');
+        new ProductList('app');
     }
 }
 
@@ -154,7 +169,6 @@ class App {
   
   static init() {
     const shop = new Shop();
-    shop.render();
     this.cart = shop.cart;
   }
 
